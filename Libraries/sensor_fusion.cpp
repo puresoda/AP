@@ -51,12 +51,12 @@ bool MPU6050::read_raw(float *gx, float *gy, float *gz, float *ax, float *ay, fl
     read_reg(ADDRESS, GYRO_X, gyro, 6);
         
     //store data in pointers
-    *ax = float(short(accel[0] | accel[1] << 8));
-    *ay = float(short(accel[2] | accel[3] << 8));
-    *az = float(short(accel[4] | accel[5] << 8));
-    *gx = float(short(gyro[0] | gyro[1] << 8));
-    *gy = float(short(gyro[2] | gyro[3] << 8));
-    *gz = float(short(gyro[4] | gyro[5] << 8));
+    *ax = float(short(accel[1] | accel[0] << 8));
+    *ay = float(short(accel[3] | accel[2] << 8));
+    *az = float(short(accel[5] | accel[4] << 8));
+    *gx = float(short(gyro[1] | gyro[0] << 8));
+    *gy = float(short(gyro[3] | gyro[2] << 8));
+    *gz = float(short(gyro[5] | gyro[4] << 8));
         
     return true;
 }
