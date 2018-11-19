@@ -25,7 +25,7 @@ void bias_calc(MPU6050 mpu, float bias[6])
 int main()
 {
     //Serial setup
-    Serial pc(USBRX, USBTX);
+    Serial pc(USBTX, USBRX);
     pc.baud(115200);
 
     //initialize and start the MPU
