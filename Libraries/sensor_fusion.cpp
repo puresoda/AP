@@ -40,7 +40,7 @@ void MPU6050::start(void)
  
 bool MPU6050::read_raw(float *gx, float *gy, float *gz, float *ax, float *ay, float *az) 
 {
-    if(!data_ready)
+    if(!data_ready())
         return false;
 
     //initialize buffers to store output of gyroscope and acceleromter
@@ -83,6 +83,6 @@ bool MPU6050::write_reg(int addr, char reg, char buf)
 bool MPU6050::read_reg(int addr, char reg, char *buf, int length) 
 {
     //return true if we can write to the register and we can read from it
-    return (i2c_object.write(addr, reg, 1, false) == 0 && i2c_object.read(addr, buf, false) == 0);
+    return (!i2c_object.write(addr, &reg, 1, true) && !i2c_object.read(addr, buf,length));
 }
 

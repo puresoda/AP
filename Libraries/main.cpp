@@ -9,7 +9,7 @@ int main()
 {
     //initialize and start the MPU
     //TODO: properly define the SDA and SLC pins based on our config
-    MPU6050 yeet(SDA, SLC);
+    MPU6050 yeet(SDA, SCL);
     yeet.start();
 
     //array to store the readings and Serial object to print
@@ -32,7 +32,7 @@ int main()
             yeet.read_raw(data[0],data[1],data[2],data[3],data[4],data[5]);
 
             //TODO: print out the readings
-            terminal.printf(data[0],data[1],data[2],data[3],data[4],data[5])
+            terminal.printf("AX: %f \n", *data[0]);
             millis_begin();
             read_count++;
         }
