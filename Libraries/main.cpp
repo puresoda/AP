@@ -20,7 +20,7 @@ void bias_calc(MPU6050 *mpu, float bias[6])
     }
 
     //expect ax to be 1 upwards
-    bias[0] = bias[0] - 1;
+    bias[3] = bias[3] - 1;
 }
 
 int main()
