@@ -14,8 +14,8 @@
  * You will need to look at the register map.
  */
  
-#define SDA                      A1     //the pin used for SDA                            
-#define SCL                      A0     //the pin used for SCL                    
+#define SDA                      D4     //the pin used for SDA                            
+#define SCL                      D5     //the pin used for SCL                    
 #define ADDRESS                  0xD1   //the slave address of the IMU
 #define INT_STATUS               0x3A   //the interrupt status register 
 #define PWR_MGMT_1               0x6B   //power management 1
@@ -24,16 +24,6 @@
 #define ACCEL_CONFIG             0x1C   //the accelerometer config register        
 #define GYRO_X                   0x43   //the register that stores the first bit of the gyroscope x value          
 #define ACCEL_X                  0x3B   //the register that stores the first bit of the accelerometer x value
-
-//the correction for the accelermeter
-#define AX_BIAS                  0
-#define AY_BIAS                  0
-#define AZ_BIAS                  0
-
-//the correction for the gyroscope
-#define GX_BIAS                  0
-#define GY_BIAS                  0
-#define GZ_BIAS                  0
 
 class MPU6050 {
 
