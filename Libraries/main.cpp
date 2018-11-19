@@ -4,24 +4,12 @@
 #include "mbed.h"
 
 const float pi = 3.14159265359;
-
-//TODO: check expected values and adjust bias_calc accordingly
-void bias_calc(MPU6050 *mpu, float bias[6])
-{
-    float data[6];
-
-    for(int i =0; i < 20; i++)
-    {
-        mpu->read_raw(&data[0],&data[1],&data[2],&data[3],&data[4],&data[5]);
-
-        //sum errors and average
-        for(int j = 0; j < 6; j++)
-            bias[j] += (data[j]/20);
-    }
-
-    //expect ax to be 1 upwards
-    bias[3] = bias[3] - 1;
-}
+const float GX_BIAS = -77;
+const float GY_BIAS = 64;
+const float GZ_BIAS = -10;
+const float AX_BIAS = -1060;
+const float AY_BIAS = -24;
+const float AZ_BIAS = 16000;
 
 int main()
 {
@@ -36,10 +24,6 @@ int main()
     //array to store the biases
     float bias[6];
 
-    //get the biases
-    //note that we pass mpu's address since it not copyable
-    bias_calc(&mpu, bias);
-
     while(1)
     {
         //get the raw data
@@ -47,11 +31,15 @@ int main()
         mpu.read_raw(&data[0], &data[1], &data[2], &data[3], &data[4], &data[5]);
 
         //account for bias and normalize the vector
-        vector orientation = {data[3] - bias[3], data[4] - bias[4], data[5] - bias[5]};
+        vector orientation = {data[3] - AX_BIAS, data[4] - AY_BIAS, data[5] - AZ_BIAS};
         vector norm_orientation;
         vector_normalize(&orientation, &norm_orientation);
+        
+        //vector rotation = {data[0] - GX_BIAS, data[1] - GY_BIAS, data[2] - GZ_BIAS};
 
+        //for some reason, the x and z values are switched
         pc.printf("<accel>: %f, %f, %f\r\n", norm_orientation.x, norm_orientation.y, norm_orientation.z);
-        wait(0.1);
+
+        wait(1);
     }
 }
