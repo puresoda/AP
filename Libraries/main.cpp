@@ -4,12 +4,12 @@
 #include "mbed.h"
 
 const float pi = 3.14159265359;
-const float GX_BIAS = -77;
-const float GY_BIAS = 64;
-const float GZ_BIAS = -10;
-const float AX_BIAS = -1060;
-const float AY_BIAS = -24;
-const float AZ_BIAS = 16000;
+const float GX_BIAS = -75;
+const float GY_BIAS = 63;
+const float GZ_BIAS = -9;
+const float AX_BIAS = 1100;
+const float AY_BIAS = 200;
+const float AZ_BIAS = 16100;
 
 int main()
 {
@@ -31,15 +31,19 @@ int main()
         mpu.read_raw(&data[0], &data[1], &data[2], &data[3], &data[4], &data[5]);
 
         //account for bias and normalize the vector
-        vector orientation = {data[3] - AX_BIAS, data[4] - AY_BIAS, data[5] - AZ_BIAS};
+        vector orientation = {data[3] - AX_BIAS, data[4] - AY_BIAS, data[5] - AZ_BIAS + 16384};
         vector norm_orientation;
         vector_normalize(&orientation, &norm_orientation);
         
         //vector rotation = {data[0] - GX_BIAS, data[1] - GY_BIAS, data[2] - GZ_BIAS};
 
-        //for some reason, the x and z values are switched
+        //TODO: fix the values
         pc.printf("<accel>: %f, %f, %f\r\n", norm_orientation.x, norm_orientation.y, norm_orientation.z);
+        
+        //pc.printf("<gyro>: %f, %f, %f\r\n", data[0], data[1], data[2]);
+        //pc.printf("<accel>: %f, %f, %f\r\n", data[3], data[4], data[5]);
 
         wait(1);
     }
 }
+
