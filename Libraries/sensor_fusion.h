@@ -25,6 +25,16 @@
 #define GYRO_X                   0x43   //the register that stores the first bit of the gyroscope x value          
 #define ACCEL_X                  0x3B   //the register that stores the first bit of the accelerometer x value
 
+//the correction for the accelermeter
+#define AX_BIAS                  0
+#define AY_BIAS                  0
+#define AZ_BIAS                  0
+
+//the correction for the gyroscope
+#define GX_BIAS                  0
+#define GY_BIAS                  0
+#define GZ_BIAS                  0
+
 class MPU6050 {
 
 public:

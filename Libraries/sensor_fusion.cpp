@@ -51,12 +51,12 @@ bool MPU6050::read_raw(float *gx, float *gy, float *gz, float *ax, float *ay, fl
     read_reg(ADDRESS, GYRO_X, gyro, 6);
         
     //store data in pointers
-    *ax = float(short(accel[1] | accel[0] << 8));
-    *ay = float(short(accel[3] | accel[2] << 8));
-    *az = float(short(accel[5] | accel[4] << 8));
-    *gx = float(short(gyro[1] | gyro[0] << 8));
-    *gy = float(short(gyro[3] | gyro[2] << 8));
-    *gz = float(short(gyro[5] | gyro[4] << 8));
+    *ax = float(short(accel[1] | accel[0] << 8)) - AX_BIAS;
+    *ay = float(short(accel[3] | accel[2] << 8)) - AY_BIAS;
+    *az = float(short(accel[5] | accel[4] << 8)) - AZ_BIAS;
+    *gx = float(short(gyro[1] | gyro[0] << 8)) - GX_BIAS;
+    *gy = float(short(gyro[3] | gyro[2] << 8)) - GY_BIAS;
+    *gz = float(short(gyro[5] | gyro[4] << 8)) - GZ_BIAS;
         
     return true;
 }
@@ -77,7 +77,7 @@ bool MPU6050::write_reg(int addr, char reg, char buf)
     char data[2] = {reg, buf};
 
     //return true if write was true
-    return (i2c_object.write(addr, data, 2, false) == 0);
+    return !i2c_object.write(addr, data, 2, true);
 }
  
 bool MPU6050::read_reg(int addr, char reg, char *buf, int length) 
