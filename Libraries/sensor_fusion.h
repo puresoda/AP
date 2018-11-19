@@ -61,9 +61,9 @@ public:
      */
     bool data_ready(void);
 
-private:
-
     I2C i2c_object; //instance of an i2c class
+
+private:
 
     /** 
      * Writes 1 byte of data to a specific address
