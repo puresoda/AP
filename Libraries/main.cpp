@@ -5,6 +5,7 @@
 
 const float pi = 3.14159265359;
 
+//TODO: check expected values and adjust bias_calc accordingly
 void bias_calc(MPU6050 *mpu, float bias[6])
 {
     float data[6];
@@ -36,6 +37,7 @@ int main()
     float bias[6];
 
     //get the biases
+    //note that we pass mpu's address since it not copyable
     bias_calc(&mpu, bias);
 
     while(1)
