@@ -77,7 +77,7 @@ bool MPU6050::write_reg(int addr, char reg, char buf)
     char data[2] = {reg, buf};
 
     //return true if write was true
-    return !i2c_object.write(addr, data, 2, true);
+    return !i2c_object.write(addr, data, 2, false);
 }
  
 bool MPU6050::read_reg(int addr, char reg, char *buf, int length) 
