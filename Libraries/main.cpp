@@ -2,15 +2,15 @@
 #include "quaternion.h"
 #include "sensor_fusion.h"
 #include "mbed.h"
-#include <math.h>
 
-const float pi = 3.14159265359;
 const float GX_BIAS = -75;
 const float GY_BIAS = 63;
 const float GZ_BIAS = -9;
 const float AX_BIAS = 1100;
 const float AY_BIAS = 200;
 const float AZ_BIAS = 16100;
+
+Timer timer;
 
 int main()
 {
@@ -23,7 +23,6 @@ int main()
     mpu.start();
     
     //THIS WILL SAVE US FROM MILLIS!!!
-    Timer timer;
     timer.start();
 
     //this unit vector is unchanging
@@ -47,30 +46,16 @@ int main()
             float yAngle = (data[1] - GY_BIAS);
             float zAngle = (data[2] - GZ_BIAS);
             vector rawGyro = {xAngle, yAngle, zAngle};
-            vector placeholder;
-            //returns magnitude of angular velocity
-            float rawAngle = vector_normalize(&rawGyro, &placeholder);
-            float initAngle = vector_normalize(&initVector, &placeholder);
-            //angular velocity to angle
-            rawAngle *= timer.read_ms();
-            initAngle *= timer.read_ms();
+
+            mag = vector_normalize(&rawGyro, &rawGyro);
+            angle = mag * 16.4 * timer.read();
+
+            quaternion kwok;
+            quaternion_create(&rawGyro, -angle, &kwok);
+            quaternion_rotate(&initVector, &kwok, &initVector);
+
             
-            float dotProduct = (initVector.x * xAngle + initVector.y * yAngle + initVector.z * zAngle) * timer.read_ms();
-            float magnitudes = rawAngle * initAngle;
-            float cosAngle = dotProduct/magnitudes;
-            float angle = acos(cosAngle) * 180 / pi;
-            
-            quaternion quatGyro;
-            quaternion_create(&initVector, -angle, &quatGyro);
-            vector gyro;
-            quaternion_rotate(&initVector, &quatGyro, &gyro);
-            
-            initVector.x = gyro.x;
-            initVector.y = gyro.y;
-            initVector.z = gyro.z;
-            
-            pc.printf("<gyro>: %f, %f, %f\r\n", gyro.x, gyro.y, gyro.z);
-    
+            pc.printf("<gyro>: %f, %f, %f\r\n", initVector.x, initVector.y, initVector.z);
             pc.printf("<accel>: %f, %f, %f\r\n", norm_orientation.x, norm_orientation.y, norm_orientation.z);
             
             //pc.printf("<gyro>: %f, %f, %f\r\n", data[0], data[1], data[2]);
@@ -80,3 +65,4 @@ int main()
         }
     }
 }
+
