@@ -57,30 +57,29 @@ int main()
             //create quaternion then rotate it around initial vector
             quaternion curr;
             quaternion_create(&rawGyro, -angle, &curr);
-            vector tempVector;
-            quaternion_rotate(&initVector, &curr, &tempVector);
-            
-            
-            float alpha = 0.5;
-            vector mult;
+            vector final_gyro;
+            quaternion_rotate(&initVector, &curr, &final_gyro);
+        
+            float alpha = 0.5; //filter constant
+            vector mult; //scaled gyroscope vector
             vector rotate;
             quaternion quat;
-            vector final;
+            vector result;
             vector normFinal;
             
             //implement normalize(alpha * a + (1 - alpha) * rotate(n))
-            quaternion_create(&tempVector, -angle, &quat);  //n
+            quaternion_create(&final_gyro, -angle, &quat);  //n
             vector_multiply(&orientation, alpha, &mult);
             quaternion_rotate(&initVector, &quat, &rotate);
-            vector_add(&mult, &rotate, &final);
-            vector_normalize(&final, &normFinal);
+            vector_add(&mult, &rotate, &result);
+            vector_normalize(&result, &normFinal);
             
             pc.printf("%f %f %f %f %f %f %f %f %f\r\n", 
             norm_orientation.x, norm_orientation.y, norm_orientation.z,
-            tempVector.x, tempVector.y, tempVector.z,
+            final_gyro.x, final_gyro.y, final_gyro.z,
             normFinal.x, normFinal.y, normFinal.z);
             
-            initVector = tempVector;
+            initVector = final_gyro;
             timer.reset();
         }
     }
