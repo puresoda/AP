@@ -1,88 +1,86 @@
-#include "mbed.h"
-#include "sensor_fusion.h"
-#include "quaternion.h"
 #include "millis.h"
+#include "quaternion.h"
+#include "sensor_fusion.h"
+#include "mbed.h"
 
-const float M_PI = 3.14159265358979323846;
-const float alpha = .5;
+const float PI = 3.14159265359;
+const float GX_BIAS = -75;
+const float GY_BIAS = 63;
+const float GZ_BIAS = -9;
+const float AX_BIAS = 1100;
+const float AY_BIAS = 200;
+const float AZ_BIAS = 16100;
 
-const float AX_BIAS = -1300;
-const float AY_BIAS = 8550;
-const float AZ_BIAS = 2384;
+Timer timer;
 
-const float GX_BIAS = 25;
-const float GY_BIAS = -15;
-const float GZ_BIAS = 18;
-
-Serial pc(USBTX, USBRX); //create a Serial object    
-Timer t; //create timer
-
-int main() 
+int main()
 {
-  t.start(); //start the timer
-  pc.baud(115200); //set the baud rate
-  float time_elapsed; //float to store time elapsed
+    //Serial setup
+    Serial pc(USBTX, USBRX);
+    pc.baud(115200);
 
-  //create and start the MPU
-  MPU6050 mpu(D4, D5);
-  mpu.start();
+    //initialize and start the MPU
+    MPU6050 mpu(SDA, SCL);
+    mpu.start();
+    
+    //THIS WILL SAVE US FROM MILLIS!!!
+    timer.start();
 
-  //inital orientation
-  vector unit = {0, 0, 1};
+    //this unit vector is unchanging
+    vector initVector = {0, 0, 1};
+    
+    while(1)
+    {
+        if (timer.read_ms() >= 100)
+        {
+            //get the raw data
+            float data[6];
+            mpu.read_raw(&data[0], &data[1], &data[2], &data[3], &data[4], &data[5]);
+    
+            //account for bias and normalize the vector
+            vector orientation = {data[3] - AX_BIAS, data[4] - AY_BIAS, data[5] - AZ_BIAS + 16384};
+            vector norm_orientation;
+            vector_normalize(&orientation, &norm_orientation);
+            
+            //get the three angles
+            float xAngle = (data[0] - GX_BIAS);
+            float yAngle = (data[1] - GY_BIAS);
+            float zAngle = (data[2] - GZ_BIAS);
+            vector rawGyro = {xAngle, yAngle, zAngle};
 
-  //data storage
-  float gx,gy,gz,ax,ay,az;
+            //find the magnitude of the angular velocities
+            float mag = vector_normalize(&rawGyro, &rawGyro);
+            
+            //convert to angle value
+            float angle = mag / 16.4 * timer.read() / 180 * PI;
 
-  while(1) 
-  {
-    //get the gyroscope and acceleromter raw values
-    mpu.read_raw(&gx,&gy,&gz,&ax,&ay,&az); 
-
-    //get the elapsed time and reset the timer
-    time_elapsed = t.read();
-    t.reset();
+            //create quaternion then rotate it around initial vector
+            quaternion curr;
+            quaternion_create(&rawGyro, -angle, &curr);
+            vector final_gyro;
+            quaternion_rotate(&initVector, &curr, &final_gyro);
         
-    vector accel = {ax + AX_BIAS, ay + AY_BIAS, az + AZ_BIAS}; //calbrate accelerometer vector
-
-    //normalize the calibrated acelerometer data
-    vector norm_accel;
-    vector_normalize(&accel, &norm_accel); 
-        
-    vector gyroadd = {gx + GX_BIAS, gy + GY_BIAS, gz + GZ_BIAS}; //calibrate gyroscope data
-
-    //normalize the calirated gyroscope data
-    vector gyrofinal;
-    float gyro_mag = vector_normalize(&gyroadd, &gyrofinal);
-
-    gyro_mag *= time_elapsed; //since gyro measures in deg/s, we multiply by the time passed
-
-    //create gyroscope rotation quaternion
-    quaternion quat;
-    quaternion_create(&gyrofinal, -(gyro_mag/16.4/360*2*M_PI), &quat);
-
-    //rotate the gyroscope vector
-    vector gyroprint;
-    quaternion_rotate(&unit, &quat, &gyroprint);
-
-    //store and update unit's value
-    vector n = unit;
-    unit = gyroprint;
-
-    vector mult; //vector to store scaled values 
-    vector rotate; //vector to store rotated vector
-    vector result; //resulting vector
-    quaternion quat2; //rotation quaternion
-
-    quaternion_create(&unit, -(gyro_mag/16.4/360*2*M_PI), &quat2);
-    vector_multiply(&norm_accel, alpha, &mult);
-    quaternion_rotate(&n, &quat2, &rotate);
-    vector_add(&mult, &rotate, &result);
-        
-    printf("%f %f %f %f %f %f %f %f %f\r\n",
-    norm_accel.x, norm_accel.y, norm_accel.z,
-    gyroprint.x, gyroprint.y, gyroprint.z,
-    result.x, result.y, result.z);
-
-    wait(.1);
-   }
+            float alpha = 0.5; //filter constant
+            vector mult; //scaled gyroscope vector
+            vector rotate;
+            quaternion quat;
+            vector result;
+            vector normFinal;
+            
+            //implement normalize(alpha * a + (1 - alpha) * rotate(n))
+            quaternion_create(&final_gyro, -angle, &quat);  //n
+            vector_multiply(&orientation, alpha, &mult);
+            quaternion_rotate(&initVector, &quat, &rotate);
+            vector_add(&mult, &rotate, &result);
+            vector_normalize(&result, &normFinal);
+            
+            pc.printf("%f %f %f %f %f %f %f %f %f\r\n", 
+            norm_orientation.x, norm_orientation.y, norm_orientation.z,
+            final_gyro.x, final_gyro.y, final_gyro.z,
+            normFinal.x, normFinal.y, normFinal.z);
+            
+            initVector = final_gyro;
+            timer.reset();
+        }
+    }
 }
