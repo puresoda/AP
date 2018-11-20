@@ -2,73 +2,84 @@
 #include "sensor_fusion.h"
 #include "quaternion.h"
 #include "millis.h"
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
- Serial pc(USBTX, USBRX); //create a Serial object
-       
-    Timer t; 
-float gx,gy,gz,ax,ay,az;
+
+const float M_PI = 3.14159265358979323846;
+const float alpha = .5;
+
+const float AX_BIAS = -1300;
+const float AY_BIAS = 8550;
+const float AZ_BIAS = 2384;
+
+const float GX_BIAS = 25;
+const float GY_BIAS = -15;
+const float GZ_BIAS = 18;
+
+Serial pc(USBTX, USBRX); //create a Serial object    
+Timer t; //create timer
+
 int main() 
 {
-    t.start();
-   pc.baud(115200);
-   float j;
-    MPU6050 sense (D4, D5);
-    sense.start();
-  struct vector unit = {0, 0, 1};
-  while(1) {
-        sense.read_raw(&gx,&gy,&gz,&ax,&ay,&az);
-        j = t.read();
-        t.reset();
-        //printf(" time = %f",j);
-        //printf("gx,gy,gz,ax,ay,az %.2f,%.2f,%.2f,%.2f,%.2f,%.2f\r\n",gx,gy,gz,ax,ay,az);
-       // wait(1);
+  t.start(); //start the timer
+  pc.baud(115200); //set the baud rate
+  float time_elapsed; //float to store time elapsed
+
+  //create and start the MPU
+  MPU6050 mpu(D4, D5);
+  mpu.start();
+
+  //inital orientation
+  vector unit = {0, 0, 1};
+
+  while(1) 
+  {
+    //get the gyroscope and acceleromter raw values
+    mpu.read_raw(&gx,&gy,&gz,&ax,&ay,&az); 
+
+    //get the elapsed time and reset the timer
+    time_elapsed = t.read();
+    t.reset();
         
-         struct vector before = {ax, ay, az};
-         float xvalue = -1300;
-         float yvalue = 8550;
-         float zvalue = 2384; //-13900
-         struct vector add;
-         struct vector bias = {xvalue, yvalue, zvalue};
-         vector_add(&bias, &before, &add);
-         struct vector after;
-        vector_normalize(&add, &after); //unit vector that points in direction 
-        //printf("%f %f %f\r\n", after.x, after.y, after.z);
+    vector accel = {ax + AX_BIAS, ay + AY_BIAS, az + AZ_BIAS}; //calbrate accelerometer vector
+
+    //normalize the calibrated acelerometer data
+    vector after;
+    vector_normalize(&accel, &after); 
         
-        float alpha = .5;
-        struct vector gyro1 = {gx, gy, gz};
-        float xgyro = 25;
-        float ygyro = -15;
-        float zgyro = 18;
-        struct vector gyroadd;
-        struct vector equalize = {xgyro, ygyro, zgyro};
-        vector_add(&equalize, &gyro1, &gyroadd);
+    vector gyroadd = {gx + GX_BIAS, gy + GY_BIAS, gz + GZ_BIAS}; //calibrate gyroscope data
 
-        struct vector gyrofinal;
-        float gyromag = vector_normalize(&gyroadd, &gyrofinal);
+    //normalize the calirated gyroscope data
+    vector gyrofinal;
+    float gyro_mag = vector_normalize(&gyroadd, &gyrofinal);
 
-        gyromag *= j;
-        struct quaternion quat;
-        quaternion_create(&gyrofinal, -(gyromag/16.4/360*2*M_PI), &quat);
+    gyro_mag *= time_elapsed; //since gyro measures in deg/s, we multiply by the time passed
 
-        vector gyroprint;
-        quaternion_rotate(&unit, &quat, &gyroprint);
+    //create gyroscope rotation quaternion
+    quaternion quat;
+    quaternion_create(&gyrofinal, -(gyro_mag/16.4/360*2*M_PI), &quat);
 
-        struct vector n = unit;
-        unit = gyroprint;
+    //rotate the gyroscope vector
+    vector gyroprint;
+    quaternion_rotate(&unit, &quat, &gyroprint);
 
-        struct vector mult; 
-        struct vector rotate;
-        struct vector final2;
-        struct quaternion quat2;
+    //store and update unit's value
+    vector n = unit;
+    unit = gyroprint;
 
-        quaternion_create(&unit, -(gyromag/16.4/360*2*M_PI), &quat2);
-        vector_multiply(&after, alpha, &mult);
-        quaternion_rotate(&n, &quat2, &rotate);
-        vector_add(&mult, &rotate, &final2);
+    vector mult; //vector to store scaled values 
+    vector rotate; //vector to store rotated vector
+    vector final2; //resulting vector
+    quaternion quat2; //rotation quaternion
+
+    quaternion_create(&unit, -(gyro_mag/16.4/360*2*M_PI), &quat2);
+    vector_multiply(&after, alpha, &mult);
+    quaternion_rotate(&n, &quat2, &rotate);
+    vector_add(&mult, &rotate, &final2);
         
-        printf("%f %f %f %f %f %f %f %f %f\r\n", after.x, after.y, after.z, gyroprint.x, gyroprint.y, gyroprint.z, final2.x, final2.y, final2.z);
-        wait(.1);
+    printf("%f %f %f %f %f %f %f %f %f\r\n",
+    after.x, after.y, after.z,
+    gyroprint.x, gyroprint.y, gyroprint.z,
+    final2.x, final2.y, final2.z);
+
+    wait(.1);
    }
 }
