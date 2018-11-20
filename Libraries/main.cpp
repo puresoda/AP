@@ -30,6 +30,9 @@ int main()
   //inital orientation
   vector unit = {0, 0, 1};
 
+  //data storage
+  float gx,gy,gz,ax,ay,az;
+
   while(1) 
   {
     //get the gyroscope and acceleromter raw values
@@ -42,8 +45,8 @@ int main()
     vector accel = {ax + AX_BIAS, ay + AY_BIAS, az + AZ_BIAS}; //calbrate accelerometer vector
 
     //normalize the calibrated acelerometer data
-    vector after;
-    vector_normalize(&accel, &after); 
+    vector norm_accel;
+    vector_normalize(&accel, &norm_accel); 
         
     vector gyroadd = {gx + GX_BIAS, gy + GY_BIAS, gz + GZ_BIAS}; //calibrate gyroscope data
 
@@ -67,18 +70,18 @@ int main()
 
     vector mult; //vector to store scaled values 
     vector rotate; //vector to store rotated vector
-    vector final2; //resulting vector
+    vector result; //resulting vector
     quaternion quat2; //rotation quaternion
 
     quaternion_create(&unit, -(gyro_mag/16.4/360*2*M_PI), &quat2);
-    vector_multiply(&after, alpha, &mult);
+    vector_multiply(&norm_accel, alpha, &mult);
     quaternion_rotate(&n, &quat2, &rotate);
-    vector_add(&mult, &rotate, &final2);
+    vector_add(&mult, &rotate, &result);
         
     printf("%f %f %f %f %f %f %f %f %f\r\n",
-    after.x, after.y, after.z,
+    norm_accel.x, norm_accel.y, norm_accel.z,
     gyroprint.x, gyroprint.y, gyroprint.z,
-    final2.x, final2.y, final2.z);
+    result.x, result.y, result.z);
 
     wait(.1);
    }
