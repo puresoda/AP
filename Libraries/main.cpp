@@ -52,7 +52,7 @@ int main()
             float mag = vector_normalize(&rawGyro, &rawGyro);
             
             //convert to angle value
-            float angle = mag / 16.4 * timer.read() * 180 * PI;
+            float angle = mag / 16.4 * timer.read() / 180 * PI;
 
             //create quaternion then rotate it around initial vector
             quaternion curr;
@@ -75,11 +75,10 @@ int main()
             vector_add(&mult, &rotate, &final);
             vector_normalize(&final, &normFinal);
             
-            pc.printf("%f, %f, %f\r\n", tempVector.x, tempVector.y, tempVector.z);
-//            pc.printf("%f %f %f %f %f %f %f %f %f\r\n", 
-//            norm_orientation.x, norm_orientation.y, norm_orientation.z,
-//            tempVector.x. tempVector.y, tempVector.z,
-//            normFinal.x, normFinal.y, normFinal.z);
+            pc.printf("%f %f %f %f %f %f %f %f %f\r\n", 
+            norm_orientation.x, norm_orientation.y, norm_orientation.z,
+            tempVector.x, tempVector.y, tempVector.z,
+            normFinal.x, normFinal.y, normFinal.z);
             
             initVector = tempVector;
             timer.reset();
