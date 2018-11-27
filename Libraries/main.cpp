@@ -62,25 +62,26 @@ int main()
         
             float alpha = 0.5; //filter constant
             vector mult; //scaled gyroscope vector
-            vector rotate;
-            quaternion quat;
-            vector result;
-            vector normFinal;
+            vector rotate; //rotated vector
+            quaternion quat; //rotation quaternion
+            vector result; //final output
+            vector normFinal; //normalized output
             
             //implement normalize(alpha * a + (1 - alpha) * rotate(n))
-            quaternion_create(&final_gyro, -angle, &quat);  //n
+            quaternion_create(&final_gyro, -angle, &quat);  
             vector_multiply(&orientation, alpha, &mult);
             quaternion_rotate(&initVector, &quat, &rotate);
             vector_add(&mult, &rotate, &result);
             vector_normalize(&result, &normFinal);
             
+            //print the data to the visualizer
             pc.printf("%f %f %f %f %f %f %f %f %f\r\n", 
             norm_orientation.x, norm_orientation.y, norm_orientation.z,
             final_gyro.x, final_gyro.y, final_gyro.z,
             normFinal.x, normFinal.y, normFinal.z);
             
-            initVector = final_gyro;
-            timer.reset();
+            initVector = final_gyro; //update gyro vector
+            timer.reset(); //reset timer
         }
     }
 }
